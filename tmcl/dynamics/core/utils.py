@@ -128,14 +128,14 @@ def create_mcl_cadm_multiheaded_mlp(
         head_logvar_layers.append(logvar_layer)
         l2_regs += [mu_l2_reg, logvar_l2_reg]
 
-    max_logvar = tf.Variable(
+    max_logvar = tf.compat.v1.Variable(
         np.ones([head_size, 1, 1, output_dim]) / 2.0,
-        dtype=tf.float32,
+        dtype=tf.compat.v1.float32,
         name="max_log_var",
     )
-    min_logvar = tf.Variable(
+    min_logvar = tf.compat.v1.Variable(
         -np.ones([head_size, 1, 1, output_dim]) * 10,
-        dtype=tf.float32,
+        dtype=tf.compat.v1.float32,
         name="min_log_var",
     )
 
@@ -151,7 +151,7 @@ def create_mcl_cadm_multiheaded_mlp(
             zip(head_mu_layers, head_logvar_layers)
         ):
             if context is not None:
-                head_xx = tf.concat([xx, context[i]], axis=2)
+                head_xx = tf.compat.v1.concat([xx, context[i]], axis=2)
             else:
                 head_xx = xx
             for h_linear_layer in head_linear_layers[i]:
@@ -163,8 +163,8 @@ def create_mcl_cadm_multiheaded_mlp(
             head_mu_list.append(head_mu)
             head_logvar_list.append(head_logvar)
 
-        head_mu = tf.stack(head_mu_list)
-        head_logvar = tf.stack(head_logvar_list)
+        head_mu = tf.compat.v1.stack(head_mu_list)
+        head_logvar = tf.compat.v1.stack(head_logvar_list)
 
         if norm_delta_mean_var is not None:
             norm_mean = norm_delta_mean_var
@@ -178,15 +178,15 @@ def create_mcl_cadm_multiheaded_mlp(
         if deterministic:
             xx = denormalized_head_mu
         else:
-            head_logvar = max_logvar - tf.nn.softplus(max_logvar - head_logvar)
-            head_logvar = min_logvar + tf.nn.softplus(head_logvar - min_logvar)
+            head_logvar = max_logvar - tf.compat.v1.nn.softplus(max_logvar - head_logvar)
+            head_logvar = min_logvar + tf.compat.v1.nn.softplus(head_logvar - min_logvar)
 
-            denormalized_head_logvar = head_logvar + 2 * tf.log(norm_std)
-            denormalized_head_std = tf.exp(denormalized_head_logvar / 2.0)
+            denormalized_head_logvar = head_logvar + 2 * tf.compat.v1.log(norm_std)
+            denormalized_head_std = tf.compat.v1.exp(denormalized_head_logvar / 2.0)
 
             xx = (
                 denormalized_head_mu
-                + tf.random.normal(tf.shape(denormalized_head_mu))
+                + tf.compat.v1.random.normal(tf.compat.v1.shape(denormalized_head_mu))
                 * denormalized_head_std
             )
 
@@ -201,12 +201,12 @@ def create_mcl_cadm_multiheaded_mlp(
     )
 
     if use_simulation_param:
-        x = tf.concat(
+        x = tf.compat.v1.concat(
             [bs_normalized_input_obs, bs_normalized_input_act, bs_input_sim_param_var],
             2,
         )
     else:
-        x = tf.concat([bs_normalized_input_obs, bs_normalized_input_act], 2)
+        x = tf.compat.v1.concat([bs_normalized_input_obs, bs_normalized_input_act], 2)
     output_var, mu, logvar, embedding = forward(x, bs_input_cp_var)
 
     """build inference graph for gpu inference"""
@@ -214,7 +214,7 @@ def create_mcl_cadm_multiheaded_mlp(
 
     n = n_candidates
     p = n_particles
-    m = tf.shape(input_obs_var)[0]
+    m = tf.compat.v1.shape(input_obs_var)[0]
     h = n_forwards
     obs_dim = input_obs_dim
     act_dim = input_act_dim
@@ -237,10 +237,10 @@ def create_mcl_cadm_multiheaded_mlp(
             print("=" * 80)
 
         if bs_input_cp_var is not None:
-            bs_input_cp_obs_var = tf.tile(
+            bs_input_cp_obs_var = tf.compat.v1.tile(
                 input_cp_obs_var[None, :, :], (ensemble_size, 1, 1)
             )  # (ensemble_size, m, obs_dim*history_length)
-            bs_input_cp_act_var = tf.tile(
+            bs_input_cp_act_var = tf.compat.v1.tile(
                 input_cp_act_var[None, :, :], (ensemble_size, 1, 1)
             )  # (ensemble_size, m, act_dim*history_length)
             bs_normalized_input_cp_obs = normalize(
@@ -249,7 +249,7 @@ def create_mcl_cadm_multiheaded_mlp(
             bs_normalized_input_cp_act = normalize(
                 bs_input_cp_act_var, norm_cp_act_mean_var, norm_cp_act_std_var
             )
-            bs_normalized_cp_x = tf.concat(
+            bs_normalized_cp_x = tf.compat.v1.concat(
                 [bs_normalized_input_cp_obs, bs_normalized_input_cp_act], axis=-1
             )
             bs_input_cp_var = cp_forward(
@@ -260,64 +260,64 @@ def create_mcl_cadm_multiheaded_mlp(
             bs_input_cp_var = None
             inference_cp_var = None
 
-        history_length = tf.shape(input_history_obs_var)[1]
+        history_length = tf.compat.v1.shape(input_history_obs_var)[1]
 
         def select_best_head():
-            pre_obs = tf.tile(
-                tf.reshape(input_history_obs_var, [m, history_length, 1, obs_dim]),
+            pre_obs = tf.compat.v1.tile(
+                tf.compat.v1.reshape(input_history_obs_var, [m, history_length, 1, obs_dim]),
                 [1, 1, p * ensemble_size, 1],
             )  # (m, history_length, p * ensemble_size, obs_dim)
             proc_pre_obs = obs_preproc_fn(pre_obs)
             normalized_proc_pre_obs = normalize(
                 proc_pre_obs, norm_obs_mean_var, norm_obs_std_var
             )
-            normalized_proc_pre_obs = tf.reshape(
-                tf.transpose(normalized_proc_pre_obs, [2, 0, 1, 3]),
+            normalized_proc_pre_obs = tf.compat.v1.reshape(
+                tf.compat.v1.transpose(normalized_proc_pre_obs, [2, 0, 1, 3]),
                 [ensemble_size, p, m, history_length, proc_obs_dim],
             )
 
-            pre_act = tf.tile(
-                tf.reshape(input_history_act_var, [m, history_length, 1, act_dim]),
+            pre_act = tf.compat.v1.tile(
+                tf.compat.v1.reshape(input_history_act_var, [m, history_length, 1, act_dim]),
                 [1, 1, p * ensemble_size, 1],
             )  # (m, history_length, p * ensemble_size, act_dim)
             normalized_pre_act = normalize(pre_act, norm_act_mean_var, norm_act_std_var)
-            normalized_pre_act = tf.reshape(
-                tf.transpose(normalized_pre_act, [2, 0, 1, 3]),
+            normalized_pre_act = tf.compat.v1.reshape(
+                tf.compat.v1.transpose(normalized_pre_act, [2, 0, 1, 3]),
                 [ensemble_size, p, m, history_length, act_dim],
             )
 
-            x = tf.concat([normalized_proc_pre_obs, normalized_pre_act], 4)
-            x = tf.reshape(
+            x = tf.compat.v1.concat([normalized_proc_pre_obs, normalized_pre_act], 4)
+            x = tf.compat.v1.reshape(
                 x, [ensemble_size, p * m * history_length, proc_obs_dim + act_dim]
             )
 
             if use_simulation_param:
                 # simulation param var: [m, simulation_param_dim]
-                simulation_param = tf.tile(
-                    tf.reshape(simulation_param_var, [m, 1, 1, simulation_param_dim]),
+                simulation_param = tf.compat.v1.tile(
+                    tf.compat.v1.reshape(simulation_param_var, [m, 1, 1, simulation_param_dim]),
                     [1, history_length, p * ensemble_size, 1],
                 )
-                simulation_param = tf.transpose(simulation_param, [2, 0, 1, 3])
-                simulation_param = tf.reshape(
+                simulation_param = tf.compat.v1.transpose(simulation_param, [2, 0, 1, 3])
+                simulation_param = tf.compat.v1.reshape(
                     simulation_param,
                     [ensemble_size, p * m * history_length, simulation_param_dim],
                 )
-                x = tf.concat([x, simulation_param], axis=-1)
+                x = tf.compat.v1.concat([x, simulation_param], axis=-1)
 
             if bs_input_cp_var is not None:
-                reshaped_context = tf.transpose(
+                reshaped_context = tf.compat.v1.transpose(
                     bs_input_cp_var, [0, 2, 1, 3]
                 )  # [head_size, m, ensemble_size, cp_output_dim]
                 reshaped_context = reshaped_context[
                     :, :, None, :, None, :
                 ]  # [head_size, m, 1, ensemble_size, cp_output_dim]
-                reshaped_context = tf.tile(
+                reshaped_context = tf.compat.v1.tile(
                     reshaped_context, [1, 1, history_length, 1, p, 1]
                 )  # [head_size, m, history_length, ensemble_size, p, cp_output_dim]
-                reshaped_context = tf.transpose(
+                reshaped_context = tf.compat.v1.transpose(
                     reshaped_context, [0, 3, 4, 1, 2, 5]
                 )  # [head_size, ensemble_size, p, m, history_length, cp_output_dim]
-                reshaped_context = tf.reshape(
+                reshaped_context = tf.compat.v1.reshape(
                     reshaped_context,
                     [head_size, ensemble_size, p * m * history_length, cp_output_dim],
                 )
@@ -327,43 +327,43 @@ def create_mcl_cadm_multiheaded_mlp(
             delta_prediction, *_ = forward(
                 x, reshaped_context
             )  # [head_size, ensemble_size, p * m * history_length, obs_dim]
-            delta_prediction = tf.reshape(
+            delta_prediction = tf.compat.v1.reshape(
                 delta_prediction,
                 [head_size, ensemble_size, p, m, history_length, obs_dim],
             )
 
-            prediction_error = tf.reduce_mean(
-                tf.square(
+            prediction_error = tf.compat.v1.reduce_mean(
+                tf.compat.v1.square(
                     delta_prediction
-                    - tf.reshape(
+                    - tf.compat.v1.reshape(
                         input_history_delta_var, [1, 1, 1, m, history_length, obs_dim]
                     )
                 ),
                 axis=[2, 4, 5],
             )  # [head_size, ensemble_size, m]
 
-            prediction_error = tf.transpose(
+            prediction_error = tf.compat.v1.transpose(
                 prediction_error, [1, 2, 0]
             )  # [ensemble_size, m, head_size]
-            best_head_idx = tf.nn.top_k(-1.0 * prediction_error)[
+            best_head_idx = tf.compat.v1.nn.top_k(-1.0 * prediction_error)[
                 1
             ]  # [ensemble_size, m, 1]
-            best_head_idx = tf.reshape(best_head_idx, [ensemble_size, m])
+            best_head_idx = tf.compat.v1.reshape(best_head_idx, [ensemble_size, m])
             return best_head_idx
 
         def select_random_head():
-            random_head_idx = tf.random_uniform(
-                [ensemble_size, m], maxval=head_size, dtype=tf.int32
+            random_head_idx = tf.compat.v1.random_uniform(
+                [ensemble_size, m], maxval=head_size, dtype=tf.compat.v1.int32
             )
             return random_head_idx
 
-        best_head_idx = tf.cond(
-            tf.math.not_equal(history_length, 0), select_best_head, select_random_head
+        best_head_idx = tf.compat.v1.cond(
+            tf.compat.v1.math.not_equal(history_length, 0), select_best_head, select_random_head
         )  # [ensemble_size, m]
 
-        best_head_idx = tf.reshape(best_head_idx, [-1])  # [ensemble_size * m]
-        best_head_idx = tf.transpose(
-            tf.stack([tf.range(tf.shape(best_head_idx)[0]), best_head_idx])
+        best_head_idx = tf.compat.v1.reshape(best_head_idx, [-1])  # [ensemble_size * m]
+        best_head_idx = tf.compat.v1.transpose(
+            tf.compat.v1.stack([tf.compat.v1.range(tf.compat.v1.shape(best_head_idx)[0]), best_head_idx])
         )  # [ensemble_size * m, 2]
 
         if cem_init_mean_var is not None:
@@ -380,37 +380,37 @@ def create_mcl_cadm_multiheaded_mlp(
 
             for _ in range(num_cem_iters):
                 lb_dist, ub_dist = mean - lower_bound, upper_bound - mean
-                constrained_var = tf.minimum(
-                    tf.minimum(tf.square(lb_dist / 2), tf.square(ub_dist / 2)), var
+                constrained_var = tf.compat.v1.minimum(
+                    tf.compat.v1.minimum(tf.compat.v1.square(lb_dist / 2), tf.compat.v1.square(ub_dist / 2)), var
                 )
-                repeated_mean = tf.tile(
+                repeated_mean = tf.compat.v1.tile(
                     mean[:, None, :, :], [1, n, 1, 1]
                 )  # (m, n, h, act_dim)
-                repeated_var = tf.tile(
+                repeated_var = tf.compat.v1.tile(
                     constrained_var[:, None, :, :], [1, n, 1, 1]
                 )  # (m, n, h, act_dim)
-                actions = tf.truncated_normal(
-                    [m, n, h, act_dim], repeated_mean, tf.sqrt(repeated_var)
+                actions = tf.compat.v1.truncated_normal(
+                    [m, n, h, act_dim], repeated_mean, tf.compat.v1.sqrt(repeated_var)
                 )
 
                 returns = 0
-                observation = tf.tile(
-                    tf.reshape(input_obs_var, [m, 1, 1, obs_dim]), [1, n, p, 1]
+                observation = tf.compat.v1.tile(
+                    tf.compat.v1.reshape(input_obs_var, [m, 1, 1, obs_dim]), [1, n, p, 1]
                 )  # (m, n, p, obs_dim)
                 if bs_input_cp_var is not None:
-                    reshaped_context = tf.transpose(
+                    reshaped_context = tf.compat.v1.transpose(
                         bs_input_cp_var, [0, 2, 1, 3]
                     )  # [head_size, m, ensemble_size, cp_output_dim]
                     reshaped_context = reshaped_context[
                         :, :, None, :, None, :
                     ]  # [head_size, m, 1, ensemble_size, 1, cp_output_dim]
-                    reshaped_context = tf.tile(
+                    reshaped_context = tf.compat.v1.tile(
                         reshaped_context, [1, 1, n, 1, int(p / ensemble_size), 1]
                     )  # [head_size, m, n, ensemble_size, p/ensemble_size, cp_output_dim]
-                    reshaped_context = tf.transpose(
+                    reshaped_context = tf.compat.v1.transpose(
                         reshaped_context, [0, 3, 4, 1, 2, 5]
                     )  # [head_size, ensemble_size, p/ensemble_size, m, n, cp_output_dim]
-                    reshaped_context = tf.reshape(
+                    reshaped_context = tf.compat.v1.reshape(
                         reshaped_context,
                         [
                             head_size,
@@ -427,11 +427,11 @@ def create_mcl_cadm_multiheaded_mlp(
                     normalized_act = normalize(
                         action, norm_act_mean_var, norm_act_std_var
                     )  # [m, n, act_dim]
-                    normalized_act = tf.tile(
+                    normalized_act = tf.compat.v1.tile(
                         normalized_act[:, :, None, :], [1, 1, p, 1]
                     )  # [m, n, p, act_dim]
-                    normalized_act = tf.reshape(
-                        tf.transpose(normalized_act, [2, 0, 1, 3]),
+                    normalized_act = tf.compat.v1.reshape(
+                        tf.compat.v1.transpose(normalized_act, [2, 0, 1, 3]),
                         [ensemble_size, int(p / ensemble_size) * m * n, act_dim],
                     )  # [ensemble_size, p/ensemble_size * m * n, act_dim]
 
@@ -439,25 +439,25 @@ def create_mcl_cadm_multiheaded_mlp(
                     normalized_proc_obs = normalize(
                         proc_observation, norm_obs_mean_var, norm_obs_std_var
                     )  # [m, n, p, proc_obs_dim]
-                    normalized_proc_obs = tf.reshape(
-                        tf.transpose(normalized_proc_obs, [2, 0, 1, 3]),
+                    normalized_proc_obs = tf.compat.v1.reshape(
+                        tf.compat.v1.transpose(normalized_proc_obs, [2, 0, 1, 3]),
                         [ensemble_size, int(p / ensemble_size) * m * n, proc_obs_dim],
                     )  # [ensemble_size, p/ensemble_size * m * n, proc_obs_dim ]
 
-                    x = tf.concat(
+                    x = tf.compat.v1.concat(
                         [normalized_proc_obs, normalized_act], 2
                     )  # [ensemble_size, p/ensemble_size * m * n, proc_obs_dim + act_dim]
 
                     if use_simulation_param:
                         # simulation param var: [m, simulation_param_dim]
-                        simulation_param = tf.tile(
-                            tf.reshape(
+                        simulation_param = tf.compat.v1.tile(
+                            tf.compat.v1.reshape(
                                 simulation_param_var, [m, 1, 1, simulation_param_dim]
                             ),
                             [1, n, p, 1],
                         )  # [m, n, p, sim_dim]
-                        simulation_param = tf.transpose(simulation_param, [2, 0, 1, 3])
-                        simulation_param = tf.reshape(
+                        simulation_param = tf.compat.v1.transpose(simulation_param, [2, 0, 1, 3])
+                        simulation_param = tf.compat.v1.reshape(
                             simulation_param,
                             [
                                 ensemble_size,
@@ -465,13 +465,13 @@ def create_mcl_cadm_multiheaded_mlp(
                                 simulation_param_dim,
                             ],
                         )
-                        x = tf.concat([x, simulation_param], axis=2)
+                        x = tf.compat.v1.concat([x, simulation_param], axis=2)
 
                     delta, *_ = forward(
                         x, reshaped_context
                     )  # [head_size, ensemble_size, int(p/ensemble_size) * m * n, obs_dim]
-                    delta = tf.transpose(
-                        tf.reshape(
+                    delta = tf.compat.v1.transpose(
+                        tf.compat.v1.reshape(
                             delta,
                             [
                                 head_size,
@@ -484,7 +484,7 @@ def create_mcl_cadm_multiheaded_mlp(
                         ),
                         [1, 3, 0, 2, 4, 5],
                     )  # [ensemble_size, m, head_size, int(p/ensemble_size), n, obs_dim]
-                    delta = tf.reshape(
+                    delta = tf.compat.v1.reshape(
                         delta,
                         [
                             ensemble_size * m,
@@ -496,49 +496,49 @@ def create_mcl_cadm_multiheaded_mlp(
                     )
 
                     if non_adaptive_planning:
-                        delta = tf.reduce_mean(
+                        delta = tf.compat.v1.reduce_mean(
                             delta, axis=1
                         )  # [ensemble_size * m, int(p/ensemble_size), n, obs_dim]
                     else:
-                        delta = tf.gather_nd(
+                        delta = tf.compat.v1.gather_nd(
                             delta, best_head_idx
                         )  # [ensemble_size * m, int(p/ensemble_size), n, obs_dim]
 
-                    delta = tf.transpose(
-                        tf.reshape(
+                    delta = tf.compat.v1.transpose(
+                        tf.compat.v1.reshape(
                             delta,
                             [ensemble_size, m, int(p / ensemble_size), n, obs_dim],
                         ),
                         [1, 3, 0, 2, 4],
                     )  # [m, n, ensemble_size, int(p/ensemble_size), obs_dim]
-                    delta = tf.reshape(delta, [m, n, p, obs_dim])
+                    delta = tf.compat.v1.reshape(delta, [m, n, p, obs_dim])
 
                     next_observation = obs_postproc_fn(
                         observation, delta
                     )  # [m, n, p, obs_dim]
-                    repeated_action = tf.tile(action[:, :, None, :], [1, 1, p, 1])
+                    repeated_action = tf.compat.v1.tile(action[:, :, None, :], [1, 1, p, 1])
                     reward = reward_fn(observation, repeated_action, next_observation)
 
                     returns += reward  # [m, n, p]
                     observation = next_observation
 
-                returns = tf.reduce_mean(returns, axis=2)
-                _, elites_idx = tf.nn.top_k(
+                returns = tf.compat.v1.reduce_mean(returns, axis=2)
+                _, elites_idx = tf.compat.v1.nn.top_k(
                     returns, k=num_elites, sorted=True
                 )  # [m, num_elites]
-                elites_idx += tf.range(0, m * n, n)[:, None]
-                flat_elites_idx = tf.reshape(
+                elites_idx += tf.compat.v1.range(0, m * n, n)[:, None]
+                flat_elites_idx = tf.compat.v1.reshape(
                     elites_idx, [m * num_elites]
                 )  # [m * num_elites]
-                flat_actions = tf.reshape(actions, [m * n, h, act_dim])
-                flat_elites = tf.gather(
+                flat_actions = tf.compat.v1.reshape(actions, [m * n, h, act_dim])
+                flat_elites = tf.compat.v1.gather(
                     flat_actions, flat_elites_idx
                 )  # [m * num_elites, h, act_dim]
-                elites = tf.reshape(flat_elites, [m, num_elites, h, act_dim])
+                elites = tf.compat.v1.reshape(flat_elites, [m, num_elites, h, act_dim])
 
-                new_mean = tf.reduce_mean(elites, axis=1)  # [m, h, act_dim]
-                new_var = tf.reduce_mean(
-                    tf.square(elites - new_mean[:, None, :, :]), axis=1
+                new_mean = tf.compat.v1.reduce_mean(elites, axis=1)  # [m, h, act_dim]
+                new_var = tf.compat.v1.reduce_mean(
+                    tf.compat.v1.square(elites - new_mean[:, None, :, :]), axis=1
                 )
 
                 mean = mean * alpha + (1 - alpha) * new_mean
@@ -640,7 +640,7 @@ def create_ensemble_multiheaded_context_predictor(
                 head_xx = head_layer(xx)
                 output_heads.append(head_xx)
 
-            output = tf.stack(output_heads)
+            output = tf.compat.v1.stack(output_heads)
             return output
 
     else:
@@ -661,8 +661,8 @@ def create_ensemble_multiheaded_context_predictor(
             for layer in layers:
                 xx = layer(xx)
             output_head = head_layer(xx)
-            output = tf.tile(
-                tf.reshape(output_head, [1, ensemble_size, -1, cp_output_dim]),
+            output = tf.compat.v1.tile(
+                tf.compat.v1.reshape(output_head, [1, ensemble_size, -1, cp_output_dim]),
                 [head_size, 1, 1, 1],
             )
             return output
@@ -673,7 +673,7 @@ def create_ensemble_multiheaded_context_predictor(
     bs_normalized_input_cp_act = normalize(
         bs_input_cp_act_var, norm_cp_act_mean_var, norm_cp_act_std_var
     )
-    bs_normalized_cp_x = tf.concat(
+    bs_normalized_cp_x = tf.compat.v1.concat(
         [bs_normalized_input_cp_obs, bs_normalized_input_cp_act], axis=-1
     )
     bs_cp_output_var = forward(bs_normalized_cp_x)  # [head_size, ensemble_size, ...]
@@ -692,25 +692,25 @@ def denormalize(data_array, mean, std):
 def create_dense_layer(
     name, ensemble_size, input_dim, output_dim, activation, weight_decay=0.0
 ):
-    weights = tf.get_variable(
+    weights = tf.compat.v1.get_variable(
         "{}_weight".format(name),
         shape=[ensemble_size, input_dim, output_dim],
-        initializer=tf.truncated_normal_initializer(
+        initializer=tf.compat.v1.truncated_normal_initializer(
             stddev=1 / (2 * np.sqrt(input_dim))
         ),
     )
-    biases = tf.get_variable(
+    biases = tf.compat.v1.get_variable(
         "{}_bias".format(name),
         shape=[ensemble_size, 1, output_dim],
-        initializer=tf.constant_initializer(0.0),
+        initializer=tf.compat.v1.constant_initializer(0.0),
     )
 
-    l2_reg = tf.multiply(
-        weight_decay, tf.nn.l2_loss(weights), name="{}_l2_reg".format(name)
+    l2_reg = tf.compat.v1.multiply(
+        weight_decay, tf.compat.v1.nn.l2_loss(weights), name="{}_l2_reg".format(name)
     )
 
     def _thunk(input_tensor):
-        out = tf.matmul(input_tensor, weights) + biases
+        out = tf.compat.v1.matmul(input_tensor, weights) + biases
         out = activation(out)
         return out
 

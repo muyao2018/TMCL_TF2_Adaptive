@@ -66,11 +66,11 @@ class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 axis=-1,
             )
         else:
-            return tf.concat(
+            return tf.compat.v1.concat(
                 [
                     obs[..., 1:2],
-                    tf.sin(obs[..., 2:3]),
-                    tf.cos(obs[..., 2:3]),
+                    tf.compat.v1.sin(obs[..., 2:3]),
+                    tf.compat.v1.cos(obs[..., 2:3]),
                     obs[..., 3:],
                 ],
                 axis=-1,
@@ -82,7 +82,7 @@ class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 [pred[..., :1], obs[..., 1:] + pred[..., 1:]], axis=-1
             )
         else:
-            return tf.concat([pred[..., :1], obs[..., 1:] + pred[..., 1:]], axis=-1)
+            return tf.compat.v1.concat([pred[..., :1], obs[..., 1:] + pred[..., 1:]], axis=-1)
 
     def targ_proc(self, obs, next_obs):
         return np.concatenate(
@@ -116,7 +116,7 @@ class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def tf_reward_fn(self):
         def _thunk(obs, act, next_obs):
-            ctrl_cost = 1e-1 * tf.reduce_sum(tf.square(act), axis=-1)
+            ctrl_cost = 1e-1 * tf.compat.v1.reduce_sum(tf.compat.v1.square(act), axis=-1)
             forward_reward = obs[..., 0]
             reward = forward_reward - ctrl_cost
             return reward

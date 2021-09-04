@@ -10,8 +10,8 @@ def create_mlp(
     output_nonlinearity,
     input_dim=None,
     input_var=None,
-    w_init=tf.contrib.layers.xavier_initializer(),
-    b_init=tf.zeros_initializer(),
+    w_init=tf.compat.v1.contrib.layers.xavier_initializer(),
+    b_init=tf.compat.v1.zeros_initializer(),
     reuse=False,
 ):
     """
@@ -23,26 +23,26 @@ def create_mlp(
         hidden_nonlinearity (tf): non-linearity for the activations in the hidden layers
         output_nonlinearity (tf or None): output non-linearity. None results in no non-linearity being applied
         input_dim (tuple): dimensions of the input variable e.g. (None, action_dim)
-        input_var (tf.placeholder or tf.Variable or None): Input of the network as a symbolic variable
-        w_init (tf.initializer): initializer for the weights
-        b_init (tf.initializer): initializer for the biases
+        input_var (tf.compat.v1.placeholder or tf.compat.v1.Variable or None): Input of the network as a symbolic variable
+        w_init (tf.compat.v1.initializer): initializer for the weights
+        b_init (tf.compat.v1.initializer): initializer for the biases
         reuse (bool): reuse or not the network
 
     Returns:
-        input_var (tf.placeholder or tf.Variable): Input of the network as a symbolic variable
-        output_var (tf.Tensor): Output of the network as a symbolic variable
+        input_var (tf.compat.v1.placeholder or tf.compat.v1.Variable): Input of the network as a symbolic variable
+        output_var (tf.compat.v1.Tensor): Output of the network as a symbolic variable
 
     """
 
     assert input_var is not None or input_dim is not None
 
     if input_var is None:
-        input_var = tf.placeholder(dtype=tf.float32, shape=input_dim, name="input")
-    with tf.variable_scope(name):
+        input_var = tf.compat.v1.placeholder(dtype=tf.compat.v1.float32, shape=input_dim, name="input")
+    with tf.compat.v1.variable_scope(name):
         x = input_var
 
         for idx, hidden_size in enumerate(hidden_sizes):
-            x = tf.layers.dense(
+            x = tf.compat.v1.layers.dense(
                 x,
                 hidden_size,
                 name="hidden_%d" % idx,
@@ -52,7 +52,7 @@ def create_mlp(
                 reuse=reuse,
             )
 
-        output_var = tf.layers.dense(
+        output_var = tf.compat.v1.layers.dense(
             x,
             output_dim,
             name="output",
@@ -81,12 +81,12 @@ def forward_mlp(
         hidden_sizes (tuple): tuple with the hidden sizes of the fully connected network
         hidden_nonlinearity (tf): non-linearity for the activations in the hidden layers
         output_nonlinearity (tf or None): output non-linearity. None results in no non-linearity being applied
-        input_var (tf.placeholder or tf.Variable): Input of the network as a symbolic variable
+        input_var (tf.compat.v1.placeholder or tf.compat.v1.Variable): Input of the network as a symbolic variable
         mlp_params (OrderedDict): OrderedDict of the params of the neural network. 
 
     Returns:
-        input_var (tf.placeholder or tf.Variable): Input of the network as a symbolic variable
-        output_var (tf.Tensor): Output of the network as a symbolic variable
+        input_var (tf.compat.v1.placeholder or tf.compat.v1.Variable): Input of the network as a symbolic variable
+        output_var (tf.compat.v1.Tensor): Output of the network as a symbolic variable
 
     """
     x = input_var
@@ -95,17 +95,17 @@ def forward_mlp(
     sizes = tuple(hidden_sizes) + (output_dim,)
 
     if output_nonlinearity is None:
-        output_nonlinearity = tf.identity
+        output_nonlinearity = tf.compat.v1.identity
 
     for name, param in mlp_params.items():
         assert str(idx) in name or (idx == len(hidden_sizes) and "output" in name)
 
         if "kernel" in name:
             assert param.shape == (x.shape[-1], sizes[idx])
-            x = tf.matmul(x, param)
+            x = tf.compat.v1.matmul(x, param)
         elif "bias" in name:
             assert param.shape == (sizes[idx],)
-            x = tf.add(x, param)
+            x = tf.compat.v1.add(x, param)
             bias_added = True
         else:
             raise NameError

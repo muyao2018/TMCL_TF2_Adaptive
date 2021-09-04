@@ -27,7 +27,7 @@ class Trainer(object):
         start_itr (int) : Number of iterations policy has already trained for, if reloading
         initial_random_sampled (bool) : Whether or not to collect random samples in the first iteration
         dynamics_model_max_epochs (int): Number of epochs to train the dynamics model
-        sess (tf.Session) : current tf session (if we loaded policy, for example)
+        sess (tf.compat.v1.Session) : current tf session (if we loaded policy, for example)
     """
 
     def __init__(
@@ -109,9 +109,9 @@ class Trainer(object):
         self.test_n_parallel = test_n_parallel
 
         if sess is None:
-            config = tf.ConfigProto()
+            config = tf.compat.v1.ConfigProto()
             config.gpu_options.allow_growth = True
-            sess = tf.Session(config=config)
+            sess = tf.compat.v1.Session(config=config)
         self.sess = sess
 
     def train(self):
@@ -169,7 +169,7 @@ class Trainer(object):
 
         with self.sess.as_default() as sess:
 
-            sess.run(tf.initializers.global_variables())
+            sess.run(tf.compat.v1.initializers.global_variables())
 
             start_time = time.time()
             for itr in range(self.start_itr, self.n_itr):

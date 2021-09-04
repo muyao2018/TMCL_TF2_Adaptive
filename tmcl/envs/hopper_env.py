@@ -87,7 +87,7 @@ class HopperEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             alive_bonus = 1.0
             reward = velocity
             reward += alive_bonus
-            reward -= 1e-3 * tf.reduce_sum(tf.square(act), axis=-1)
+            reward -= 1e-3 * tf.compat.v1.reduce_sum(tf.compat.v1.square(act), axis=-1)
             return reward
 
         return _thunk

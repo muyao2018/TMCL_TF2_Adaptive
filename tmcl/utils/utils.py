@@ -7,7 +7,7 @@ import tensorflow as tf
 
 def compile_function(inputs, outputs, log_name=None):
     def run(*input_vals):
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
         return sess.run(outputs, feed_dict=dict(list(zip(inputs, input_vals))))
 
     return run
@@ -223,7 +223,7 @@ def set_seed(seed):
     seed %= 4294967294
     random.seed(seed)
     np.random.seed(seed)
-    tf.set_random_seed(seed)
+    tf.compat.v1.set_random_seed(seed)
     print("using seed %s" % (str(seed)))
 
 

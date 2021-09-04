@@ -12,8 +12,8 @@ class Layer(Serializable):
     Also provides functions for executing and updating policy parameters
 
     Note:
-        the preupdate policy is stored as tf.Variables, while the postupdate
-        policy is stored in numpy arrays and executed through tf.placeholders
+        the preupdate policy is stored as tf.compat.v1.Variables, while the postupdate
+        policy is stored in numpy arrays and executed through tf.compat.v1.placeholders
 
     Args:
         obs_dim (int): dimensionality of the observation space -> specifies the input size of the policy
@@ -31,9 +31,9 @@ class Layer(Serializable):
         input_dim,
         output_dim,
         hidden_sizes=(32, 32),
-        hidden_nonlinearity=tf.nn.relu,
+        hidden_nonlinearity=tf.compat.v1.nn.relu,
         context_hidden_sizes=(32, 32),
-        context_hidden_nonlinearity=tf.nn.relu,
+        context_hidden_nonlinearity=tf.compat.v1.nn.relu,
         output_nonlinearity=None,
         input_var=None,
         params=None,
@@ -55,7 +55,7 @@ class Layer(Serializable):
         cp_output_var=None,
         action_space=None,
         policy_hidden_sizes=(32, 32),
-        policy_hidden_nonlinearity=tf.nn.tanh,
+        policy_hidden_nonlinearity=tf.compat.v1.nn.tanh,
         dynamics_hidden_sizes=(32, 32),
         sigma_flag=1,
         separate_flag=1,
@@ -213,7 +213,7 @@ class Layer(Serializable):
 
     def get_params(self):
         """
-        Get the tf.Variables representing the trainable weights of the network (symbolic)
+        Get the tf.compat.v1.Variables representing the trainable weights of the network (symbolic)
 
         Returns:
             (dict) : a dict of all trainable Variables
@@ -227,7 +227,7 @@ class Layer(Serializable):
         Returns:
             (list) : list of values for parameters
         """
-        param_values = tf.get_default_session().run(self._params)
+        param_values = tf.compat.v1.get_default_session().run(self._params)
         return param_values
 
     def set_params(self, policy_params):
@@ -244,14 +244,14 @@ class Layer(Serializable):
         if self._assign_ops is None:
             assign_ops, assign_phs = [], []
             for var in self.get_params().values():
-                assign_placeholder = tf.placeholder(dtype=var.dtype)
-                assign_op = tf.assign(var, assign_placeholder)
+                assign_placeholder = tf.compat.v1.placeholder(dtype=var.dtype)
+                assign_op = tf.compat.v1.assign(var, assign_placeholder)
                 assign_ops.append(assign_op)
                 assign_phs.append(assign_placeholder)
             self._assign_ops = assign_ops
             self._assign_phs = assign_phs
         feed_dict = dict(zip(self._assign_phs, policy_params.values()))
-        tf.get_default_session().run(self._assign_ops, feed_dict=feed_dict)
+        tf.compat.v1.get_default_session().run(self._assign_ops, feed_dict=feed_dict)
 
     def __getstate__(self):
         state = {
@@ -262,8 +262,8 @@ class Layer(Serializable):
 
     def __setstate__(self, state):
         # Serializable.__setstate__(self, state['init_args'])
-        tf.get_default_session().run(
-            tf.variables_initializer(self.get_params().values())
+        tf.compat.v1.get_default_session().run(
+            tf.compat.v1.variables_initializer(self.get_params().values())
         )
         self.set_params(state["network_params"])
 
@@ -286,7 +286,7 @@ class MCLMultiHeadedCaDMEnsembleMLP(Layer):
             self.cem_init_mean_var = None
             self.cem_init_std_var = None
 
-        with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
+        with tf.compat.v1.variable_scope(self.name, reuse=tf.compat.v1.AUTO_REUSE):
 
             if self._params is None:
                 # build the actual policy network
@@ -357,9 +357,9 @@ class MCLMultiHeadedCaDMEnsembleMLP(Layer):
                 )
 
                 # save the policy's trainable variables in dicts
-                current_scope = tf.get_default_graph().get_name_scope()
-                trainable_vars = tf.get_collection(
-                    tf.GraphKeys.TRAINABLE_VARIABLES, scope=current_scope
+                current_scope = tf.compat.v1.get_default_graph().get_name_scope()
+                trainable_vars = tf.compat.v1.get_collection(
+                    tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope=current_scope
                 )
                 self._params = OrderedDict(
                     [
@@ -381,7 +381,7 @@ class MultiHeadedEnsembleContextPredictor(Layer):
         """
         Builds computational graph for policy
         """
-        with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
+        with tf.compat.v1.variable_scope(self.name, reuse=tf.compat.v1.AUTO_REUSE):
             # build the actual policy network
             (
                 self.context_output_var,
@@ -406,9 +406,9 @@ class MultiHeadedEnsembleContextPredictor(Layer):
             )
 
             # save the policy's trainable variables in dicts
-            current_scope = tf.get_default_graph().get_name_scope()
-            trainable_vars = tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES, scope=current_scope
+            current_scope = tf.compat.v1.get_default_graph().get_name_scope()
+            trainable_vars = tf.compat.v1.get_collection(
+                tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, scope=current_scope
             )
             self._params = OrderedDict(
                 [

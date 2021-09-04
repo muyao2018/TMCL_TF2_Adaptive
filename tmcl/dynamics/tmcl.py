@@ -12,7 +12,7 @@ import time
 import joblib
 import os
 import os.path as osp
-
+tf.compat.v1.disable_eager_execution()
 tfd = tfp.distributions
 
 
@@ -22,12 +22,12 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
     """
 
     _activations = {
-        None: tf.identity,
-        "relu": tf.nn.relu,
-        "tanh": tf.tanh,
-        "sigmoid": tf.sigmoid,
-        "softmax": tf.nn.softmax,
-        "swish": lambda x: x * tf.sigmoid(x),
+        None: tf.compat.v1.identity,
+        "relu": tf.compat.v1.nn.relu,
+        "tanh": tf.compat.v1.tanh,
+        "sigmoid": tf.compat.v1.sigmoid,
+        "softmax": tf.compat.v1.nn.softmax,
+        "swish": lambda x: x * tf.compat.v1.sigmoid(x),
     }
 
     def __init__(
@@ -35,14 +35,14 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
         name,
         env,
         hidden_sizes=(200, 200, 200, 200),
-        hidden_nonlinearity=tf.nn.relu,
+        hidden_nonlinearity=tf.compat.v1.nn.relu,
         output_nonlinearity=None,
         traj_batch_size=10,
         sample_batch_size=32,
         segment_size=128,
         learning_rate=0.001,
         normalize_input=True,
-        optimizer=tf.train.AdamOptimizer,
+        optimizer=tf.compat.v1.train.AdamOptimizer,
         valid_split_ratio=0.2,
         rolling_average_persitency=0.99,
         n_forwards=30,
@@ -62,7 +62,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
         cp_hidden_sizes=(256, 128, 64),
         context_weight_decays=(0.0, 0.0, 0.0, 0.0),
         context_out_dim=10,
-        context_hidden_nonlinearity=tf.nn.relu,
+        context_hidden_nonlinearity=tf.compat.v1.nn.relu,
         history_length=10,
         future_length=10,
         state_diff=False,
@@ -134,43 +134,43 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
         hidden_nonlinearity = self._activations[hidden_nonlinearity]
         output_nonlinearity = self._activations[output_nonlinearity]
 
-        with tf.variable_scope(name):
+        with tf.compat.v1.variable_scope(name):
             # placeholders
-            self.obs_ph = tf.placeholder(tf.float32, shape=(None, obs_space_dims))
-            self.obs_next_ph = tf.placeholder(tf.float32, shape=(None, obs_space_dims))
-            self.act_ph = tf.placeholder(tf.float32, shape=(None, action_space_dims))
-            self.delta_ph = tf.placeholder(tf.float32, shape=(None, obs_space_dims))
-            self.cp_obs_ph = tf.placeholder(
-                tf.float32, shape=(None, obs_space_dims * self.history_length)
+            self.obs_ph = tf.compat.v1.placeholder(tf.compat.v1.float32, shape=(None, obs_space_dims))
+            self.obs_next_ph = tf.compat.v1.placeholder(tf.compat.v1.float32, shape=(None, obs_space_dims))
+            self.act_ph = tf.compat.v1.placeholder(tf.compat.v1.float32, shape=(None, action_space_dims))
+            self.delta_ph = tf.compat.v1.placeholder(tf.compat.v1.float32, shape=(None, obs_space_dims))
+            self.cp_obs_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(None, obs_space_dims * self.history_length)
             )
-            self.cp_act_ph = tf.placeholder(
-                tf.float32, shape=(None, action_space_dims * self.history_length)
+            self.cp_act_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(None, action_space_dims * self.history_length)
             )
-            self.simulation_param_ph = tf.placeholder(
-                tf.float32, shape=(None, simulation_param_dim)
+            self.simulation_param_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(None, simulation_param_dim)
             )
 
-            self.bs_obs_ph = tf.placeholder(
-                tf.float32, shape=(ensemble_size, None, None, obs_space_dims)
+            self.bs_obs_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(ensemble_size, None, None, obs_space_dims)
             )  # [ensemble_size, trajectory, path_length, obs_space_dims]
-            self.bs_obs_next_ph = tf.placeholder(
-                tf.float32, shape=(ensemble_size, None, None, obs_space_dims)
+            self.bs_obs_next_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(ensemble_size, None, None, obs_space_dims)
             )
-            self.bs_act_ph = tf.placeholder(
-                tf.float32, shape=(ensemble_size, None, None, action_space_dims)
+            self.bs_act_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(ensemble_size, None, None, action_space_dims)
             )
-            self.bs_delta_ph = tf.placeholder(
-                tf.float32, shape=(ensemble_size, None, None, obs_space_dims)
+            self.bs_delta_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(ensemble_size, None, None, obs_space_dims)
             )
-            self.bs_back_delta_ph = tf.placeholder(
-                tf.float32, shape=(ensemble_size, None, None, obs_space_dims)
+            self.bs_back_delta_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(ensemble_size, None, None, obs_space_dims)
             )
-            self.bs_cp_obs_ph = tf.placeholder(
-                tf.float32,
+            self.bs_cp_obs_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32,
                 shape=(ensemble_size, None, None, obs_space_dims * self.history_length),
             )
-            self.bs_cp_act_ph = tf.placeholder(
-                tf.float32,
+            self.bs_cp_act_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32,
                 shape=(
                     ensemble_size,
                     None,
@@ -178,90 +178,90 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                     action_space_dims * self.history_length,
                 ),
             )
-            self.bs_simulation_param_ph = tf.placeholder(
-                tf.float32, shape=(ensemble_size, None, None, simulation_param_dim)
+            self.bs_simulation_param_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(ensemble_size, None, None, simulation_param_dim)
             )
 
-            self.norm_obs_mean_ph = tf.placeholder(
-                tf.float32, shape=(proc_obs_space_dims,)
+            self.norm_obs_mean_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(proc_obs_space_dims,)
             )
-            self.norm_obs_std_ph = tf.placeholder(
-                tf.float32, shape=(proc_obs_space_dims,)
+            self.norm_obs_std_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(proc_obs_space_dims,)
             )
-            self.norm_act_mean_ph = tf.placeholder(
-                tf.float32, shape=(action_space_dims,)
+            self.norm_act_mean_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(action_space_dims,)
             )
-            self.norm_act_std_ph = tf.placeholder(
-                tf.float32, shape=(action_space_dims,)
+            self.norm_act_std_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(action_space_dims,)
             )
-            self.norm_delta_mean_ph = tf.placeholder(
-                tf.float32, shape=(obs_space_dims,)
+            self.norm_delta_mean_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(obs_space_dims,)
             )
-            self.norm_delta_std_ph = tf.placeholder(tf.float32, shape=(obs_space_dims,))
-            self.norm_cp_obs_mean_ph = tf.placeholder(
-                tf.float32, shape=(obs_space_dims * self.history_length,)
+            self.norm_delta_std_ph = tf.compat.v1.placeholder(tf.compat.v1.float32, shape=(obs_space_dims,))
+            self.norm_cp_obs_mean_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(obs_space_dims * self.history_length,)
             )
-            self.norm_cp_obs_std_ph = tf.placeholder(
-                tf.float32, shape=(obs_space_dims * self.history_length,)
+            self.norm_cp_obs_std_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(obs_space_dims * self.history_length,)
             )
-            self.norm_cp_act_mean_ph = tf.placeholder(
-                tf.float32, shape=(action_space_dims * self.history_length,)
+            self.norm_cp_act_mean_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(action_space_dims * self.history_length,)
             )
-            self.norm_cp_act_std_ph = tf.placeholder(
-                tf.float32, shape=(action_space_dims * self.history_length,)
+            self.norm_cp_act_std_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(action_space_dims * self.history_length,)
             )
-            self.norm_back_delta_mean_ph = tf.placeholder(
-                tf.float32, shape=(obs_space_dims,)
+            self.norm_back_delta_mean_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(obs_space_dims,)
             )
-            self.norm_back_delta_std_ph = tf.placeholder(
-                tf.float32, shape=(obs_space_dims,)
-            )
-
-            self.cem_init_mean_ph = tf.placeholder(
-                tf.float32, shape=(None, self.n_forwards, action_space_dims)
-            )
-            self.cem_init_var_ph = tf.placeholder(
-                tf.float32, shape=(None, self.n_forwards, action_space_dims)
+            self.norm_back_delta_std_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(obs_space_dims,)
             )
 
-            self.history_obs_ph = tf.placeholder(
-                tf.float32, shape=(None, None, obs_space_dims)
+            self.cem_init_mean_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(None, self.n_forwards, action_space_dims)
+            )
+            self.cem_init_var_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(None, self.n_forwards, action_space_dims)
+            )
+
+            self.history_obs_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(None, None, obs_space_dims)
             )  # [batch_size, history_length, obs_space_dims]
-            self.history_act_ph = tf.placeholder(
-                tf.float32, shape=(None, None, action_space_dims)
+            self.history_act_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(None, None, action_space_dims)
             )
-            self.history_delta_ph = tf.placeholder(
-                tf.float32, shape=(None, None, obs_space_dims)
+            self.history_delta_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.float32, shape=(None, None, obs_space_dims)
             )
 
-            self.min_traj_idxs_ph = tf.placeholder(
-                tf.int32, shape=(ensemble_size, None)
+            self.min_traj_idxs_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.int32, shape=(ensemble_size, None)
             )  # [ensemble_size, trajectory]
-            self.min_traj_back_idxs_ph = tf.placeholder(
-                tf.int32, shape=(ensemble_size, None)
+            self.min_traj_back_idxs_ph = tf.compat.v1.placeholder(
+                tf.compat.v1.int32, shape=(ensemble_size, None)
             )  # [ensemble_size, trajectory]
 
-            traj_size_tensor = tf.shape(self.bs_obs_ph)[1]
-            traj_length_tensor = tf.shape(self.bs_obs_ph)[2]
+            traj_size_tensor = tf.compat.v1.shape(self.bs_obs_ph)[1]
+            traj_length_tensor = tf.compat.v1.shape(self.bs_obs_ph)[2]
 
-            bs_obs = tf.reshape(self.bs_obs_ph, [ensemble_size, -1, obs_space_dims])
-            bs_obs_next = tf.reshape(
+            bs_obs = tf.compat.v1.reshape(self.bs_obs_ph, [ensemble_size, -1, obs_space_dims])
+            bs_obs_next = tf.compat.v1.reshape(
                 self.bs_obs_next_ph, [ensemble_size, -1, obs_space_dims]
             )
-            bs_act = tf.reshape(self.bs_act_ph, [ensemble_size, -1, action_space_dims])
-            bs_cp_obs = tf.reshape(
+            bs_act = tf.compat.v1.reshape(self.bs_act_ph, [ensemble_size, -1, action_space_dims])
+            bs_cp_obs = tf.compat.v1.reshape(
                 self.bs_cp_obs_ph,
                 [ensemble_size, -1, obs_space_dims * self.history_length],
             )
-            bs_cp_act = tf.reshape(
+            bs_cp_act = tf.compat.v1.reshape(
                 self.bs_cp_act_ph,
                 [ensemble_size, -1, action_space_dims * self.history_length],
             )
-            bs_sim_param = tf.reshape(
+            bs_sim_param = tf.compat.v1.reshape(
                 self.bs_simulation_param_ph, [ensemble_size, -1, simulation_param_dim]
             )
 
-            with tf.variable_scope("context_model"):
+            with tf.compat.v1.variable_scope("context_model"):
                 cp = MultiHeadedEnsembleContextPredictor(
                     name,
                     output_dim=0,
@@ -287,7 +287,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                 )  # [head_size, ensemble_size, None, context_dim]
 
             # create MLP
-            with tf.variable_scope("ff_model"):
+            with tf.compat.v1.variable_scope("ff_model"):
                 mlp = MCLMultiHeadedCaDMEnsembleMLP(
                     name,
                     input_dim=0,
@@ -347,7 +347,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                     non_adaptive_planning=self.non_adaptive_planning,
                 )
 
-            with tf.variable_scope("bb_model"):
+            with tf.compat.v1.variable_scope("bb_model"):
                 back_mlp = MCLMultiHeadedCaDMEnsembleMLP(
                     name,
                     input_dim=0,
@@ -406,7 +406,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                     non_adaptive_planning=False,
                 )
 
-            self.params = tf.trainable_variables()
+            self.params = tf.compat.v1.trainable_variables()
             self.delta_pred = mlp.output_var
             self.embedding = mlp.embedding
 
@@ -420,7 +420,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
             bs_normalized_delta = normalize(
                 self.bs_delta_ph, self.norm_delta_mean_ph, self.norm_delta_std_ph
             )
-            bs_mu = tf.reshape(
+            bs_mu = tf.compat.v1.reshape(
                 mu,
                 [
                     head_size,
@@ -430,7 +430,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                     obs_space_dims,
                 ],
             )
-            bs_logvar = tf.reshape(
+            bs_logvar = tf.compat.v1.reshape(
                 logvar,
                 [
                     head_size,
@@ -441,54 +441,54 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                 ],
             )
 
-            bs_traj_losses = tf.reduce_mean(
-                tf.reduce_mean(tf.square(bs_mu - bs_normalized_delta), axis=-1), axis=-1
+            bs_traj_losses = tf.compat.v1.reduce_mean(
+                tf.compat.v1.reduce_mean(tf.compat.v1.square(bs_mu - bs_normalized_delta), axis=-1), axis=-1
             )  # [head_size, ensemble_size, traj_size]
-            bs_traj_losses = tf.transpose(
+            bs_traj_losses = tf.compat.v1.transpose(
                 bs_traj_losses, [1, 2, 0]
             )  # [ensemble_size, traj_size, head_size]
 
-            self.min_traj_idxs = tf.reshape(
-                tf.nn.top_k(-1.0 * bs_traj_losses)[1], [ensemble_size, traj_size_tensor]
+            self.min_traj_idxs = tf.compat.v1.reshape(
+                tf.compat.v1.nn.top_k(-1.0 * bs_traj_losses)[1], [ensemble_size, traj_size_tensor]
             )
 
-            flat_min_traj_idxs = tf.reshape(
+            flat_min_traj_idxs = tf.compat.v1.reshape(
                 self.min_traj_idxs_ph, [-1]
             )  # [ensemble_size * traj_size]
-            flat_bs_traj_losses = tf.reshape(
+            flat_bs_traj_losses = tf.compat.v1.reshape(
                 bs_traj_losses, [-1, head_size]
             )  # [ensemble_size * traj_size, head_size]
-            nd_idxs = tf.transpose(
-                tf.stack(
-                    [tf.range(tf.shape(flat_min_traj_idxs)[0]), flat_min_traj_idxs],
+            nd_idxs = tf.compat.v1.transpose(
+                tf.compat.v1.stack(
+                    [tf.compat.v1.range(tf.compat.v1.shape(flat_min_traj_idxs)[0]), flat_min_traj_idxs],
                     axis=0,
                 )
             )  # [ensemble_size * traj_size, 2]
-            min_traj_losses = tf.gather_nd(
+            min_traj_losses = tf.compat.v1.gather_nd(
                 flat_bs_traj_losses, nd_idxs
             )  # [ensemble_size * traj_size]
-            min_traj_losses = tf.reshape(
+            min_traj_losses = tf.compat.v1.reshape(
                 min_traj_losses, [ensemble_size, traj_size_tensor]
             )
 
             # Define IE Loss
-            ie_mse_loss = tf.reduce_mean(bs_traj_losses, axis=[1, 2])
+            ie_mse_loss = tf.compat.v1.reduce_mean(bs_traj_losses, axis=[1, 2])
 
-            # max_traj_losses, self.min_traj_idxs = tf.nn.top_k(-1. * bs_traj_losses) # [ensemble_size, traj_size]
+            # max_traj_losses, self.min_traj_idxs = tf.compat.v1.nn.top_k(-1. * bs_traj_losses) # [ensemble_size, traj_size]
             # min_traj_losses = -1. * max_traj_losses # [ensemble_size, traj_size]
 
             mse_loss = 0.0
             for head_idx in range(self.head_size):
-                head_idx_bool = tf.cast(
-                    tf.equal(self.min_traj_idxs_ph, head_idx), tf.float32
+                head_idx_bool = tf.compat.v1.cast(
+                    tf.compat.v1.equal(self.min_traj_idxs_ph, head_idx), tf.compat.v1.float32
                 )
-                mse_loss += tf.reduce_sum(
+                mse_loss += tf.compat.v1.reduce_sum(
                     min_traj_losses * head_idx_bool, axis=1
-                ) / tf.maximum(tf.reduce_sum(head_idx_bool, axis=1), 1.0)
+                ) / tf.compat.v1.maximum(tf.compat.v1.reduce_sum(head_idx_bool, axis=1), 1.0)
 
-            self.mse_loss = tf.reduce_sum(mse_loss)
-            self.ie_mse_loss = tf.reduce_sum(ie_mse_loss)
-            self.norm_pred_error = tf.reduce_mean(min_traj_losses)
+            self.mse_loss = tf.compat.v1.reduce_sum(mse_loss)
+            self.ie_mse_loss = tf.compat.v1.reduce_sum(ie_mse_loss)
+            self.norm_pred_error = tf.compat.v1.reduce_mean(min_traj_losses)
 
             # 2. Backward Dynamics Prediction Loss
             # Outputs from Dynamics Model are normalized delta predictions
@@ -502,7 +502,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                 self.norm_back_delta_mean_ph,
                 self.norm_back_delta_std_ph,
             )
-            bs_back_mu = tf.reshape(
+            bs_back_mu = tf.compat.v1.reshape(
                 back_mu,
                 [
                     head_size,
@@ -512,7 +512,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                     obs_space_dims,
                 ],
             )
-            bs_back_logvar = tf.reshape(
+            bs_back_logvar = tf.compat.v1.reshape(
                 back_logvar,
                 [
                     head_size,
@@ -523,60 +523,60 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                 ],
             )
 
-            bs_traj_back_losses = tf.reduce_mean(
-                tf.reduce_mean(
-                    tf.square(bs_back_mu - bs_normalized_back_delta), axis=-1
+            bs_traj_back_losses = tf.compat.v1.reduce_mean(
+                tf.compat.v1.reduce_mean(
+                    tf.compat.v1.square(bs_back_mu - bs_normalized_back_delta), axis=-1
                 ),
                 axis=-1,
             )  # [head_size, ensemble_size, traj_size]
-            bs_traj_back_losses = tf.transpose(
+            bs_traj_back_losses = tf.compat.v1.transpose(
                 bs_traj_back_losses, [1, 2, 0]
             )  # [ensemble_size, traj_size, head_size]
 
-            self.min_traj_back_idxs = tf.reshape(
-                tf.nn.top_k(-1.0 * bs_traj_losses)[1], [ensemble_size, traj_size_tensor]
+            self.min_traj_back_idxs = tf.compat.v1.reshape(
+                tf.compat.v1.nn.top_k(-1.0 * bs_traj_losses)[1], [ensemble_size, traj_size_tensor]
             )
 
-            flat_min_traj_back_idxs = tf.reshape(
+            flat_min_traj_back_idxs = tf.compat.v1.reshape(
                 self.min_traj_back_idxs_ph, [-1]
             )  # [ensemble_size * traj_size]
-            flat_bs_traj_back_losses = tf.reshape(
+            flat_bs_traj_back_losses = tf.compat.v1.reshape(
                 bs_traj_back_losses, [-1, head_size]
             )  # [ensemble_size * traj_size, head_size]
-            nd_back_idxs = tf.transpose(
-                tf.stack(
+            nd_back_idxs = tf.compat.v1.transpose(
+                tf.compat.v1.stack(
                     [
-                        tf.range(tf.shape(flat_min_traj_back_idxs)[0]),
+                        tf.compat.v1.range(tf.compat.v1.shape(flat_min_traj_back_idxs)[0]),
                         flat_min_traj_back_idxs,
                     ],
                     axis=0,
                 )
             )  # [ensemble_size * traj_size, 2]
-            min_traj_back_losses = tf.gather_nd(
+            min_traj_back_losses = tf.compat.v1.gather_nd(
                 flat_bs_traj_back_losses, nd_back_idxs
             )  # [ensemble_size * traj_size]
-            min_traj_back_losses = tf.reshape(
+            min_traj_back_losses = tf.compat.v1.reshape(
                 min_traj_back_losses, [ensemble_size, traj_size_tensor]
             )
 
             # Define Back IE Loss
-            ie_back_mse_loss = tf.reduce_mean(bs_traj_back_losses, axis=[1, 2])
+            ie_back_mse_loss = tf.compat.v1.reduce_mean(bs_traj_back_losses, axis=[1, 2])
 
             back_mse_loss = 0.0
             for head_idx in range(self.head_size):
-                head_idx_bool = tf.cast(
-                    tf.equal(self.min_traj_back_idxs_ph, head_idx), tf.float32
+                head_idx_bool = tf.compat.v1.cast(
+                    tf.compat.v1.equal(self.min_traj_back_idxs_ph, head_idx), tf.compat.v1.float32
                 )
-                back_mse_loss += tf.reduce_sum(
+                back_mse_loss += tf.compat.v1.reduce_sum(
                     min_traj_back_losses * head_idx_bool, axis=1
-                ) / tf.maximum(tf.reduce_sum(head_idx_bool, axis=1), 1.0)
+                ) / tf.compat.v1.maximum(tf.compat.v1.reduce_sum(head_idx_bool, axis=1), 1.0)
 
-            self.back_mse_loss = tf.reduce_sum(back_mse_loss)
-            self.ie_back_mse_loss = tf.reduce_sum(ie_back_mse_loss)
+            self.back_mse_loss = tf.compat.v1.reduce_sum(back_mse_loss)
+            self.ie_back_mse_loss = tf.compat.v1.reduce_sum(ie_back_mse_loss)
 
             # Weight Decay
-            self.l2_reg_loss = tf.reduce_sum(mlp.l2_regs)
-            self.back_l2_reg_loss = tf.reduce_sum(back_mlp.l2_regs)
+            self.l2_reg_loss = tf.compat.v1.reduce_sum(mlp.l2_regs)
+            self.back_l2_reg_loss = tf.compat.v1.reduce_sum(back_mlp.l2_regs)
 
             if self.deterministic:
                 self.recon_loss = self.mse_loss
@@ -596,125 +596,125 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
                 ) * self.weight_decay_coeff
             else:
                 # Forward
-                bs_invvar = tf.exp(-bs_logvar)
-                bs_mu_traj_losses = tf.reduce_mean(
-                    tf.reduce_mean(
-                        tf.square(bs_mu - bs_normalized_delta) * bs_invvar, axis=-1
+                bs_invvar = tf.compat.v1.exp(-bs_logvar)
+                bs_mu_traj_losses = tf.compat.v1.reduce_mean(
+                    tf.compat.v1.reduce_mean(
+                        tf.compat.v1.square(bs_mu - bs_normalized_delta) * bs_invvar, axis=-1
                     ),
                     axis=-1,
                 )
-                bs_var_traj_losses = tf.reduce_mean(
-                    tf.reduce_mean(bs_logvar, axis=-1), axis=-1
+                bs_var_traj_losses = tf.compat.v1.reduce_mean(
+                    tf.compat.v1.reduce_mean(bs_logvar, axis=-1), axis=-1
                 )
                 bs_traj_losses = (
                     bs_mu_traj_losses + bs_var_traj_losses
                 )  # [head_size, ensemble_size, traj_size]
 
-                bs_traj_losses = tf.transpose(
+                bs_traj_losses = tf.compat.v1.transpose(
                     bs_traj_losses, [1, 2, 0]
                 )  # [ensemble_size, traj_size, head_size]
 
-                self.min_traj_idxs = tf.reshape(
-                    tf.nn.top_k(-1.0 * bs_traj_losses)[1],
+                self.min_traj_idxs = tf.compat.v1.reshape(
+                    tf.compat.v1.nn.top_k(-1.0 * bs_traj_losses)[1],
                     [ensemble_size, traj_size_tensor],
                 )  # [ensemble_size, traj_size]
 
-                flat_min_traj_idxs = tf.reshape(
+                flat_min_traj_idxs = tf.compat.v1.reshape(
                     self.min_traj_idxs_ph, [-1]
                 )  # [ensemble_size * traj_size]
-                flat_bs_traj_losses = tf.reshape(
+                flat_bs_traj_losses = tf.compat.v1.reshape(
                     bs_traj_losses, [-1, head_size]
                 )  # [ensemble_size * traj_size, head_size]
-                nd_idxs = tf.transpose(
-                    tf.stack(
-                        [tf.range(tf.shape(flat_min_traj_idxs)[0]), flat_min_traj_idxs],
+                nd_idxs = tf.compat.v1.transpose(
+                    tf.compat.v1.stack(
+                        [tf.compat.v1.range(tf.compat.v1.shape(flat_min_traj_idxs)[0]), flat_min_traj_idxs],
                         axis=0,
                     )
                 )  # [ensemble_size * traj_size, 2]
-                min_traj_losses = tf.gather_nd(
+                min_traj_losses = tf.compat.v1.gather_nd(
                     flat_bs_traj_losses, nd_idxs
                 )  # [ensemble_size * traj_size]
-                min_traj_losses = tf.reshape(
+                min_traj_losses = tf.compat.v1.reshape(
                     min_traj_losses, [ensemble_size, traj_size_tensor]
                 )
-                ie_recon_loss = tf.reduce_mean(bs_traj_losses, axis=[1, 2])
+                ie_recon_loss = tf.compat.v1.reduce_mean(bs_traj_losses, axis=[1, 2])
                 recon_loss = 0.0
                 for head_idx in range(self.head_size):
-                    head_idx_bool = tf.cast(
-                        tf.equal(self.min_traj_idxs_ph, head_idx), tf.float32
+                    head_idx_bool = tf.compat.v1.cast(
+                        tf.compat.v1.equal(self.min_traj_idxs_ph, head_idx), tf.compat.v1.float32
                     )
-                    recon_loss += tf.reduce_sum(
+                    recon_loss += tf.compat.v1.reduce_sum(
                         min_traj_losses * head_idx_bool, axis=1
-                    ) / tf.maximum(tf.reduce_sum(head_idx_bool, axis=1), 1.0)
+                    ) / tf.compat.v1.maximum(tf.compat.v1.reduce_sum(head_idx_bool, axis=1), 1.0)
 
-                self.recon_loss = tf.reduce_sum(recon_loss)
-                self.ie_recon_loss = tf.reduce_sum(ie_recon_loss)
-                self.reg_loss = 0.01 * tf.reduce_sum(
+                self.recon_loss = tf.compat.v1.reduce_sum(recon_loss)
+                self.ie_recon_loss = tf.compat.v1.reduce_sum(ie_recon_loss)
+                self.reg_loss = 0.01 * tf.compat.v1.reduce_sum(
                     mlp.max_logvar
-                ) - 0.01 * tf.reduce_sum(mlp.min_logvar)
+                ) - 0.01 * tf.compat.v1.reduce_sum(mlp.min_logvar)
 
                 # Backward
-                bs_back_invvar = tf.exp(-bs_back_logvar)
-                bs_mu_traj_back_losses = tf.reduce_mean(
-                    tf.reduce_mean(
-                        tf.square(bs_back_mu - bs_normalized_back_delta)
+                bs_back_invvar = tf.compat.v1.exp(-bs_back_logvar)
+                bs_mu_traj_back_losses = tf.compat.v1.reduce_mean(
+                    tf.compat.v1.reduce_mean(
+                        tf.compat.v1.square(bs_back_mu - bs_normalized_back_delta)
                         * bs_back_invvar,
                         axis=-1,
                     ),
                     axis=-1,
                 )
-                bs_var_traj_back_losses = tf.reduce_mean(
-                    tf.reduce_mean(bs_back_logvar, axis=-1), axis=-1
+                bs_var_traj_back_losses = tf.compat.v1.reduce_mean(
+                    tf.compat.v1.reduce_mean(bs_back_logvar, axis=-1), axis=-1
                 )
                 bs_traj_back_losses = (
                     bs_mu_traj_back_losses + bs_var_traj_back_losses
                 )  # [head_size, ensemble_size, traj_size]
 
-                bs_traj_back_losses = tf.transpose(
+                bs_traj_back_losses = tf.compat.v1.transpose(
                     bs_traj_back_losses, [1, 2, 0]
                 )  # [ensemble_size, traj_size, head_size]
 
-                self.min_traj_back_idxs = tf.reshape(
-                    tf.nn.top_k(-1.0 * bs_traj_back_losses)[1],
+                self.min_traj_back_idxs = tf.compat.v1.reshape(
+                    tf.compat.v1.nn.top_k(-1.0 * bs_traj_back_losses)[1],
                     [ensemble_size, traj_size_tensor],
                 )  # [ensemble_size, traj_size]
 
-                flat_min_traj_back_idxs = tf.reshape(
+                flat_min_traj_back_idxs = tf.compat.v1.reshape(
                     self.min_traj_back_idxs_ph, [-1]
                 )  # [ensemble_size * traj_size]
-                flat_bs_traj_back_losses = tf.reshape(
+                flat_bs_traj_back_losses = tf.compat.v1.reshape(
                     bs_traj_back_losses, [-1, head_size]
                 )  # [ensemble_size * traj_size, head_size]
-                nd_idxs = tf.transpose(
-                    tf.stack(
+                nd_idxs = tf.compat.v1.transpose(
+                    tf.compat.v1.stack(
                         [
-                            tf.range(tf.shape(flat_min_traj_back_idxs)[0]),
+                            tf.compat.v1.range(tf.compat.v1.shape(flat_min_traj_back_idxs)[0]),
                             flat_min_traj_back_idxs,
                         ],
                         axis=0,
                     )
                 )  # [ensemble_size * traj_size, 2]
-                min_traj_back_losses = tf.gather_nd(
+                min_traj_back_losses = tf.compat.v1.gather_nd(
                     flat_bs_traj_back_losses, nd_idxs
                 )  # [ensemble_size * traj_size]
-                min_traj_back_losses = tf.reshape(
+                min_traj_back_losses = tf.compat.v1.reshape(
                     min_traj_back_losses, [ensemble_size, traj_size_tensor]
                 )
-                ie_back_recon_loss = tf.reduce_mean(bs_traj_back_losses, axis=[1, 2])
+                ie_back_recon_loss = tf.compat.v1.reduce_mean(bs_traj_back_losses, axis=[1, 2])
                 back_recon_loss = 0.0
                 for head_idx in range(self.head_size):
-                    head_idx_bool = tf.cast(
-                        tf.equal(self.min_traj_back_idxs_ph, head_idx), tf.float32
+                    head_idx_bool = tf.compat.v1.cast(
+                        tf.compat.v1.equal(self.min_traj_back_idxs_ph, head_idx), tf.compat.v1.float32
                     )
-                    back_recon_loss += tf.reduce_sum(
+                    back_recon_loss += tf.compat.v1.reduce_sum(
                         min_traj_back_losses * head_idx_bool, axis=1
-                    ) / tf.maximum(tf.reduce_sum(head_idx_bool, axis=1), 1.0)
+                    ) / tf.compat.v1.maximum(tf.compat.v1.reduce_sum(head_idx_bool, axis=1), 1.0)
 
-                self.back_recon_loss = tf.reduce_sum(back_recon_loss)
-                self.ie_back_recon_loss = tf.reduce_sum(ie_back_recon_loss)
-                self.back_reg_loss = 0.01 * tf.reduce_sum(
+                self.back_recon_loss = tf.compat.v1.reduce_sum(back_recon_loss)
+                self.ie_back_recon_loss = tf.compat.v1.reduce_sum(ie_back_recon_loss)
+                self.back_reg_loss = 0.01 * tf.compat.v1.reduce_sum(
                     back_mlp.max_logvar
-                ) - 0.01 * tf.reduce_sum(back_mlp.min_logvar)
+                ) - 0.01 * tf.compat.v1.reduce_sum(back_mlp.min_logvar)
 
                 self.loss = (
                     self.recon_loss
@@ -977,7 +977,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
 
         assert 1 > valid_split_ratio >= 0
 
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
 
         obs_shape = obs.shape
         obs_next_shape = obs_next.shape
@@ -1515,7 +1515,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
             logger.logkv("PredictionError", np.mean(mean_pred_errors))
 
     def save(self, save_path):
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
         ps = sess.run(self.params)
         joblib.dump(ps, save_path)
         if self.normalization is not None:
@@ -1523,7 +1523,7 @@ class MCLMultiHeadedCaDMDynamicsModel(Serializable):
             joblib.dump(self.normalization, norm_save_path)
 
     def load(self, load_path):
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
         loaded_params = joblib.load(load_path)
         restores = []
         for p, loaded_p in zip(self.params, loaded_params):

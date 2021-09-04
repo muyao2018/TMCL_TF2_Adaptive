@@ -115,12 +115,12 @@ class SlimHumanoidEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             ctrl = act
 
             lin_vel_cost = 0.25 / 0.015 * obs[..., 22]
-            quad_ctrl_cost = 0.1 * tf.reduce_sum(tf.square(ctrl), axis=-1)
+            quad_ctrl_cost = 0.1 * tf.compat.v1.reduce_sum(tf.compat.v1.square(ctrl), axis=-1)
             quad_impact_cost = 0.0
 
-            alive_bonus = 5.0 * tf.cast(
-                tf.logical_and(tf.greater(obs[..., 1], 1.0), tf.less(obs[..., 1], 2.0)),
-                dtype=tf.float32,
+            alive_bonus = 5.0 * tf.compat.v1.cast(
+                tf.compat.v1.logical_and(tf.compat.v1.greater(obs[..., 1], 1.0), tf.compat.v1.less(obs[..., 1], 2.0)),
+                dtype=tf.compat.v1.float32,
             )
 
             reward = lin_vel_cost - quad_ctrl_cost - quad_impact_cost + alive_bonus
