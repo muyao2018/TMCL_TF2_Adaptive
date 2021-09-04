@@ -315,7 +315,7 @@ if __name__ == "__main__":
         # Sampling
         "max_path_length": 200,
         "num_rollouts": 10,
-        "n_parallel": 5,
+        "n_parallel": 10,
         "initial_random_samples": True,
         # Training Hyperparameters
         "n_itr": 10,
