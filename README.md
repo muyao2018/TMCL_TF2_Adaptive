@@ -24,11 +24,11 @@ pip install -r requirements.txt
 Train and evaluate agents:
 
 ```
-python -m run_scripts.run_tmcl --dataset hopper --normalize_flag --no_test_flag
-python -m run_scripts.run_tmcl --dataset slim_humanoid --normalize_flag --no_test_flag
-python -m run_scripts.run_tmcl --dataset halfcheetah --normalize_flag --no_test_flag
-python -m run_scripts.run_tmcl --dataset cripple_ant --normalize_flag --no_test_flag
-
+conda activate de
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset hopper --normalize_flag --no_test_flag --seed 0
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset slim_humanoid --normalize_flag --no_test_flag --seed 0
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset halfcheetah --normalize_flag --no_test_flag --seed 0
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset cripple_ant --normalize_flag --no_test_flag --seed 0
 ```
 
 ## Reference
