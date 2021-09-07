@@ -2,7 +2,7 @@ from tmcl.envs.normalized_env import normalize
 from tmcl.envs import *
 
 
-def get_environment_config(config):
+def get_environment_config2(config):
     if config["dataset"] == "halfcheetah":
         train_mass_scale_set = [0.5, 0.75, 1.0, 1.25, 1.5]
         train_damping_scale_set = [1.0]
