@@ -4,12 +4,14 @@ from tmcl.envs import *
 
 def get_environment_config(config):
     if config["dataset"] == "halfcheetah":
-        train_mass_scale_set = [0.25, 0.5, 1.5, 2.5]
-        train_damping_scale_set = [1.0]
-        config["num_test"] = 2
+        train_mass_scale_set = [0.5, 0.75, 1.0, 1.25, 1.5]
+        train_damping_scale_set = [0.5, 0.75, 1.0, 1.25, 1.5]
+        config["num_test"] = 4
         config["test_range"] = [
-            [[0.1, 0.15], [1.0]],
-            [[2.75, 3.0], [1.0]],
+            [[0.25, 0.375], [1.75, 2.0]],
+            [[1.75, 2.0], [0.25, 0.375]],
+            [[0.25, 0.375], [0.25, 0.375]],
+            [[1.75, 2.0], [1.75, 2.0]],
         ]
         env = HalfCheetahEnv(
             mass_scale_set=train_mass_scale_set,
@@ -40,12 +42,14 @@ def get_environment_config(config):
         config["simulation_param_dim"] = 1
 
     elif config["dataset"] == "slim_humanoid":
-        train_mass_scale_set = [0.8, 0.9, 1.0, 1.15, 1.25]
-        train_damping_scale_set = [1.0]
-        config["num_test"] = 2
+        train_mass_scale_set = [0.5, 0.75, 1.0, 1.25, 1.5]
+        train_damping_scale_set = [0.5, 0.75, 1.0, 1.25, 1.5]
+        config["num_test"] = 4
         config["test_range"] = [
-            [[0.6, 0.7], [1.0]],
-            [[1.5, 1.6], [1.0]],
+            [[0.25, 0.375], [1.75, 2.0]],
+            [[1.75, 2.0], [0.25, 0.375]],
+            [[0.25, 0.375], [0.25, 0.375]],
+            [[1.75, 2.0], [1.75, 2.0]],
         ]
         env = SlimHumanoidEnv(
             mass_scale_set=train_mass_scale_set,
@@ -61,11 +65,13 @@ def get_environment_config(config):
 
     elif config["dataset"] == "hopper":
         train_mass_scale_set = [0.5, 0.75, 1.0, 1.25, 1.5]
-        train_damping_scale_set = [1.0]
-        config["num_test"] = 2
+        train_damping_scale_set = [0.5, 0.75, 1.0, 1.25, 1.5]
+        config["num_test"] = 4
         config["test_range"] = [
-            [[0.25, 0.375], [1.0]],
-            [[1.75, 2.0], [1.0]],
+            [[0.25, 0.375], [1.75, 2.0]],
+            [[1.75, 2.0], [0.25, 0.375]],
+            [[0.25, 0.375], [0.25, 0.375]],
+            [[1.75, 2.0], [1.75, 2.0]],
         ]
         env = HopperEnv(
             mass_scale_set=train_mass_scale_set,
