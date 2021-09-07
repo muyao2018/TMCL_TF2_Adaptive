@@ -7,7 +7,7 @@ from tmcl.envs.normalized_env import normalize
 from tmcl.utils.utils import ClassEncoder
 from tmcl.samplers.model_sample_processor import ModelSampleProcessor
 from tmcl.envs.config import get_environment_config
-
+from tmcl.envs.config2 import get_environment_config2
 from tensorboardX import SummaryWriter
 import json
 import os
@@ -15,8 +15,12 @@ import gym
 import argparse
 
 
-def run_experiment(config):
-    env, config = get_environment_config(config)
+def run_experiment(config,multi_confound):
+    if multi_confound:
+        env, config = get_environment_config(config)
+    else:
+        env, config = get_environment_config2(config)
+    
 
     # Save final config after editing config with respect to each environment.
     EXP_NAME = config["save_name"]
@@ -225,6 +229,9 @@ if __name__ == "__main__":
         "--back_coeff", type=float, default=0.5, help="coefficient for backward loss"
     )
     parser.add_argument(
+        "--multi_confound", type=bool, default=True, help="if use multi confounder"
+    )
+    parser.add_argument(
         "--future_length", type=int, default=5, help="length of future timesteps"
     )
     parser.add_argument(
@@ -363,5 +370,5 @@ if __name__ == "__main__":
         "discount": 1.0,
         "tag": args.tag,
     }
-
-    run_experiment(config)
+    run_experiment(config,args.multi_confound)
+    
