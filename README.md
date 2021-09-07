@@ -20,6 +20,27 @@ Install required packages with below commands:
 conda create -n tmcl python=3.6
 pip install -r requirements.txt
 ```
+To evaluate with the baseline:
+```
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset hopper --normalize_flag  --multi_confound True  --seed 0
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset slim_humanoid --normalize_flag  --multi_confound True  --seed 0
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset halfcheetah --normalize_flag  --multi_confound True --seed 0 
+
+CUDA_VISIBLE_DEVICES=1 python -m run_scripts.run_tmcl --dataset hopper --normalize_flag  --multi_confound True  --seed 1
+CUDA_VISIBLE_DEVICES=1 python -m run_scripts.run_tmcl --dataset slim_humanoid --normalize_flag  --multi_confound True  --seed 1
+CUDA_VISIBLE_DEVICES=1 python -m run_scripts.run_tmcl --dataset halfcheetah --normalize_flag  --multi_confound True --seed 1
+
+CUDA_VISIBLE_DEVICES=2 python -m run_scripts.run_tmcl --dataset hopper --normalize_flag  --multi_confound False  --seed 0
+CUDA_VISIBLE_DEVICES=2 python -m run_scripts.run_tmcl --dataset slim_humanoid --normalize_flag  --multi_confound False  --seed 0
+CUDA_VISIBLE_DEVICES=2 python -m run_scripts.run_tmcl --dataset halfcheetah --normalize_flag  --multi_confound False --seed 0 
+
+CUDA_VISIBLE_DEVICES=3 python -m run_scripts.run_tmcl --dataset hopper --normalize_flag  --multi_confound False  --seed 1
+CUDA_VISIBLE_DEVICES=3 python -m run_scripts.run_tmcl --dataset slim_humanoid --normalize_flag  --multi_confound False  --seed 1
+CUDA_VISIBLE_DEVICES=3 python -m run_scripts.run_tmcl --dataset halfcheetah --normalize_flag  --multi_confound False --seed 1 
+```
+
+
+
 
 Train and evaluate agents:
 
