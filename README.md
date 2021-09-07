@@ -41,6 +41,19 @@ CUDA_VISIBLE_DEVICES=3 python -m run_scripts.run_tmcl --dataset halfcheetah --no
 
 
 
+To use multi-context estimator to solve multi confounders
+```
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset hopper --normalize_flag  --multi_confound True  --seed 0  --use_global_head_flag 0
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset slim_humanoid --normalize_flag  --multi_confound True  --seed 0  --use_global_head_flag 0
+CUDA_VISIBLE_DEVICES=0 python -m run_scripts.run_tmcl --dataset halfcheetah --normalize_flag  --multi_confound True --seed 0  --use_global_head_flag 0
+```
+
+To use global-context estimator to solve multi confounders
+```
+CUDA_VISIBLE_DEVICES=1 python -m run_scripts.run_tmcl --dataset hopper --normalize_flag  --multi_confound True  --seed 0  --use_global_head_flag 1
+CUDA_VISIBLE_DEVICES=1 python -m run_scripts.run_tmcl --dataset slim_humanoid --normalize_flag  --multi_confound True  --seed 0  --use_global_head_flag 1
+CUDA_VISIBLE_DEVICES=1 python -m run_scripts.run_tmcl --dataset halfcheetah --normalize_flag  --multi_confound True --seed 0  --use_global_head_flag 1
+```
 
 Train and evaluate agents:
 
