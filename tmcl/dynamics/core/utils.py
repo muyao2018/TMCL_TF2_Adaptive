@@ -631,6 +631,32 @@ def create_ensemble_multiheaded_context_predictor(
             head_layers += [head_layer]
             l2_regs += [l2_reg]
 
+        transform_x,_ = create_dense_layer(
+                name="transform_x",
+                ensemble_size=ensemble_size,
+                input_dim=cp_output_dim,
+                output_dim=cp_output_dim,
+                activation=output_nonlinearity,
+                weight_decay=context_weight_decays[-1],
+            )
+
+        transform_y, _ = create_dense_layer(
+            name="transform_y",
+            ensemble_size=ensemble_size,
+            input_dim=cp_output_dim,
+            output_dim=cp_output_dim,
+            activation=output_nonlinearity,
+            weight_decay=context_weight_decays[-1],
+        )
+        transform_mi, _ = create_dense_layer(
+            name="transform_mi",
+            ensemble_size=ensemble_size,
+            input_dim=cp_output_dim,
+            output_dim=1,
+            activation=output_nonlinearity,
+            weight_decay=context_weight_decays[-1],
+        )
+
         def forward(xx, inference=False):
             for layer in layers:
                 xx = layer(xx)
@@ -640,6 +666,23 @@ def create_ensemble_multiheaded_context_predictor(
                 head_xx = head_layer(xx)
                 output_heads.append(head_xx)
 
+            shuffle_1 = tf.random.shuffle(output_heads[1])
+            shuffle_2 = tf.random.shuffle(output_heads[2])
+
+            pred_xy_0 = transform_mi(tf.nn.relu(transform_x(output_heads[0]) + transform_y(output_heads[1])))
+            pred_x_y_0 = transform_mi(tf.nn.relu(transform_x(output_heads[0])+transform_y(shuffle_1)))
+            MI_0 = pred_xy_0-pred_x_y_0
+
+            pred_xy_1 = transform_mi(tf.nn.relu(transform_x(output_heads[0]) + transform_y(output_heads[2])))
+            pred_x_y_1 = transform_mi(tf.nn.relu(transform_x(output_heads[0]) + transform_y(shuffle_2)))
+            MI_1 = pred_xy_1 - pred_x_y_1
+
+            pred_xy_2 = transform_mi(tf.nn.relu(transform_x(output_heads[1]) + transform_y(output_heads[2])))
+            pred_x_y_2 = transform_mi(tf.nn.relu(transform_x(output_heads[1]) + transform_y(shuffle_2)))
+            MI_2 = pred_xy_2 - pred_x_y_2
+
+            MI=(MI_0+MI_1+MI_2)/3.0
+            
             output = tf.compat.v1.stack(output_heads)
             return output
 
