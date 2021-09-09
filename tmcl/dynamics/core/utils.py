@@ -682,7 +682,7 @@ def create_ensemble_multiheaded_context_predictor(
             MI_2 = pred_xy_2 - pred_x_y_2
 
             MI=(MI_0+MI_1+MI_2)/3.0
-            
+            print(MI)
             output = tf.compat.v1.stack(output_heads)
             return output
 
