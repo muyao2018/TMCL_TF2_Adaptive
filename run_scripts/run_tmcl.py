@@ -18,8 +18,12 @@ import argparse
 def run_experiment(config,multi_confound):
     if multi_confound:
         env, config = get_environment_config(config)
+        config["confound"] = "multi"
+
     else:
         env, config = get_environment_config2(config)
+        config["confound"] = "single"
+
     
 
     # Save final config after editing config with respect to each environment.
@@ -27,7 +31,7 @@ def run_experiment(config,multi_confound):
     EXP_NAME += (
         "hidden_" + str(config["dim_hidden"]) + "_lr_" + str(config["learning_rate"])
     )
-    EXP_NAME += "_horizon_" + str(config["horizon"]) + "_seed_" + str(config["seed"])
+    EXP_NAME += "_horizon_" + str(config["horizon"]) + "_seed_" + str(config["seed"])+"_confounder_"+str(config["confound"])
 
     exp_dir = os.getcwd() + "/data/" + EXP_NAME + "/" + config.get("exp_name", "")
     logger.configure(
