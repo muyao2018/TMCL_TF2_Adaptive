@@ -665,24 +665,6 @@ def create_ensemble_multiheaded_context_predictor(
             for head_layer in head_layers:
                 head_xx = head_layer(xx)
                 output_heads.append(head_xx)
-
-            shuffle_1 = tf.random.shuffle(output_heads[1])
-            shuffle_2 = tf.random.shuffle(output_heads[2])
-
-            pred_xy_0 = transform_mi(tf.nn.relu(transform_x(output_heads[0]) + transform_y(output_heads[1])))
-            pred_x_y_0 = transform_mi(tf.nn.relu(transform_x(output_heads[0])+transform_y(shuffle_1)))
-            MI_0 = pred_xy_0-pred_x_y_0
-
-            pred_xy_1 = transform_mi(tf.nn.relu(transform_x(output_heads[0]) + transform_y(output_heads[2])))
-            pred_x_y_1 = transform_mi(tf.nn.relu(transform_x(output_heads[0]) + transform_y(shuffle_2)))
-            MI_1 = pred_xy_1 - pred_x_y_1
-
-            pred_xy_2 = transform_mi(tf.nn.relu(transform_x(output_heads[1]) + transform_y(output_heads[2])))
-            pred_x_y_2 = transform_mi(tf.nn.relu(transform_x(output_heads[1]) + transform_y(shuffle_2)))
-            MI_2 = pred_xy_2 - pred_x_y_2
-
-            MI=(MI_0+MI_1+MI_2)/3.0
-            print(MI)
             output = tf.compat.v1.stack(output_heads)
             return output
 
